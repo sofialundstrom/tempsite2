@@ -7,8 +7,8 @@ const rockwell = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Tempsite",
-  description: "Test",
+  title: "Skurkeriet",
+  description: "Något spännande är på gång...",
 };
 
 export default function RootLayout({
