@@ -1,64 +1,28 @@
-"use client";
-import { useEffect, useState } from "react";
+import ScatteredText from "./scattered-text";
+
+const constructionLine1 = "SIDAN ÄR UNDER";
+const constructionLine2 = "KONSTRUKTION";
+
+const constructionClassName =
+  "glitch text-2xl leading-tight text-[#f9ea38] tracking-[0.03em] sm:text-3xl sm:tracking-[0.05em] md:text-4xl lg:text-5xl";
 
 export default function Home() {
-  const [timeLeft, setTimeLeft] = useState(0);
-
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout;
-
-    async function fetchTime() {
-      const res = await fetch("/api/time");
-      const data = await res.json();
-
-      const serverNow = data.now;
-      const target = data.target;
-      const clientNow = Date.now();
-
-      const offset = serverNow - clientNow;
-
-      function updateCountdown() {
-        const correctedNow = Date.now() + offset;
-        setTimeLeft(Math.max(target - correctedNow, 0));
-      }
-
-      updateCountdown();
-      intervalId = setInterval(updateCountdown, 1000);
-    }
-
-    fetchTime();
-
-    return () => clearInterval(intervalId);
-  }, []);
-
-  function pad(n: number) {
-    return n.toString().padStart(2, "0");
-  }
-
-  function format(ms: number) {
-    const totalSeconds = Math.floor(ms / 1000);
-
-    const days = Math.floor(totalSeconds / 86400);
-    const hours = Math.floor((totalSeconds % 86400) / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-
-    return `${pad(days)}:${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-  }
-
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-black gap-5 px-4 text-center">
-      <h1 className="text-2xl sm:text-3xl text-[#f9ea38]">
-        NÅGOT SPÄNNANDE...
-      </h1>
-
-      <div className="text-4xl sm:text-5xl md:text-6xl text-[#f9ea38] tracking-[0.1em] sm:tracking-[0.15em] md:tracking-[0.2em]">
-        {timeLeft > 0 ? format(timeLeft) : "00:00:00:00"}
+    <main className="relative min-h-screen overflow-hidden bg-black">
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        <ScatteredText />
       </div>
 
-      <p className="text-xl sm:text-2xl md:text-3xl text-[#f9ea38]">
-        Var: K4
-      </p>
+      <div className="fixed inset-0 z-10 flex items-center justify-center px-4">
+        <div className="flex flex-col items-center text-center">
+          <div className={constructionClassName} data-text={constructionLine1}>
+            {constructionLine1}
+          </div>
+          <div className={constructionClassName} data-text={constructionLine2}>
+            {constructionLine2}
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

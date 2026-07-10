@@ -8,7 +8,7 @@ const rockwell = localFont({
 
 export const metadata: Metadata = {
   title: "Skurkeriet",
-  description: "Något spännande är på gång...",
+  description: "Något spännande på väg",
 };
 
 export default function RootLayout({
@@ -17,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="sv">
       <body className={`${rockwell.className} min-h-screen`}>
         {children}
       </body>
