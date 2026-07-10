@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 const pageText = "ALL MAKT ÅT TENGIL";
 const MAX_VISIBLE_DESKTOP = 18;
-const MAX_VISIBLE_MOBILE = 5;
+const MAX_VISIBLE_MOBILE = 8;
 
 function getEdgeMargin(isMobile: boolean) {
   return isMobile ? 5 : 3;
@@ -60,14 +60,14 @@ function isMobileViewport() {
 
 function getCenterExclusion(isMobile: boolean): Region {
   return isMobile
-    ? { topMin: 36, topMax: 64, leftMin: 6, leftMax: 94 }
+    ? { topMin: 38, topMax: 62, leftMin: 6, leftMax: 94 }
     : { topMin: 32, topMax: 68, leftMin: 16, leftMax: 84 };
 }
 
 function getPaddedCenter(isMobile: boolean): Region {
   const center = getCenterExclusion(isMobile);
   const pad = isMobile
-    ? { top: 7, left: 4 }
+    ? { top: 2.5, left: 4 }
     : { top: 3, left: 2 };
 
   return {
@@ -161,30 +161,40 @@ function overlapsOthers(
   );
 }
 
+function getCenterLeft(metrics: TextMetrics, bounds: SpawnBounds) {
+  return Math.min(
+    bounds.maxLeft,
+    Math.max(bounds.minLeft, (100 - metrics.widthPct) / 2),
+  );
+}
+
 function buildMobileSlots(
   metrics: TextMetrics,
   bounds: SpawnBounds,
   center: Region,
 ): Position[] {
   const slots: Position[] = [];
-  const verticalGap = metrics.heightPct * 1.5;
-  const centerBuffer = metrics.heightPct * 2;
-  let useRight = false;
+  const verticalGap = metrics.heightPct * 1.15;
+  const centerBuffer = metrics.heightPct * 0.55;
+  const centerLeft = getCenterLeft(metrics, bounds);
+  const horizontalAlignments = [bounds.minLeft, centerLeft, bounds.maxLeft];
+  let alignmentIndex = 0;
 
-  function tryAddSlot(top: number) {
-    const left = useRight ? bounds.maxLeft : bounds.minLeft;
+  function tryAddSlot(top: number, left?: number) {
+    const slotLeft =
+      left ?? horizontalAlignments[alignmentIndex % horizontalAlignments.length];
 
     if (
-      isValidPosition(top, left, metrics, bounds, center) &&
+      isValidPosition(top, slotLeft, metrics, bounds, center) &&
       !slots.some((slot) =>
         boxesOverlap(
-          getTextBox(top, left, metrics),
+          getTextBox(top, slotLeft, metrics),
           getTextBox(slot.top, slot.left, metrics),
         ),
       )
     ) {
-      slots.push({ top, left });
-      useRight = !useRight;
+      slots.push({ top, left: slotLeft });
+      if (left === undefined) alignmentIndex += 1;
     }
   }
 
@@ -198,6 +208,21 @@ function buildMobileSlots(
   while (top <= bounds.maxTop) {
     tryAddSlot(top);
     top += metrics.heightPct + verticalGap;
+  }
+
+  const nearTitleTop = Math.max(
+    bounds.minTop,
+    center.topMin - metrics.heightPct - metrics.heightPct * 0.35,
+  );
+  const nearTitleBottom = Math.min(
+    bounds.maxTop,
+    center.topMax + metrics.heightPct * 0.35,
+  );
+
+  for (const slotTop of [nearTitleTop, nearTitleBottom]) {
+    for (const slotLeft of horizontalAlignments) {
+      tryAddSlot(slotTop, slotLeft);
+    }
   }
 
   return slots;
@@ -405,6 +430,7 @@ export default function ScatteredText() {
   useEffect(() => {
     if (!metrics) return;
 
+    const resolvedMetrics = metrics;
     const timeouts = new Set<ReturnType<typeof setTimeout>>();
 
     function schedule(fn: () => void, ms: number) {
@@ -422,7 +448,7 @@ export default function ScatteredText() {
       if (activeCount.current >= getMaxVisible(isMobile)) return;
 
       const picked = pickPosition(
-        metrics,
+        resolvedMetrics,
         isMobile,
         textsRef.current,
         regionUsage.current,
@@ -464,9 +490,9 @@ export default function ScatteredText() {
             text.id === id ? { ...text, visible: true } : text,
           ),
         );
-      }, 80);
+      }, 120);
 
-      const visibleFor = randomBetween(1800, 3800);
+      const visibleFor = randomBetween(4000, 8000);
 
       schedule(() => {
         setTexts((prev) =>
@@ -476,14 +502,14 @@ export default function ScatteredText() {
         );
       }, visibleFor);
 
-      schedule(() => removeText(id), visibleFor + 1600);
+      schedule(() => removeText(id), visibleFor + 6800);
     }
 
     function scheduleSpawn() {
       schedule(() => {
         spawn();
         scheduleSpawn();
-      }, randomBetween(isMobileViewport() ? 600 : 200, isMobileViewport() ? 1800 : 900));
+      }, randomBetween(isMobileViewport() ? 800 : 400, isMobileViewport() ? 2200 : 1200));
     }
 
     schedule(spawn, randomBetween(100, 400));
